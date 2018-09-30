@@ -1,3 +1,9 @@
+UNIX DOMAIN ソケット通信ライブラリ
+===
+
+UNIX DOMAIN ソケット通信をするライブラリです。
+
+### Server
 ```go
 package main
 
@@ -20,8 +26,8 @@ func main() {
 	}
 	// Called on success
 	sock.Success = func(mes_from_client []byte, conn unixsock.Conn) {
-        // Output : Hi, data please.
-        fmt.Println(string(mes_from_client))
+		// Output : Hi, data please.
+		fmt.Println(string(mes_from_client))
 		// Return message to client
 		conn.Write([]byte("Hello!!"))
 	}
@@ -48,7 +54,7 @@ func main() {
 }
 ```
 
-
+### Client
 ```go
 package main
 
@@ -59,13 +65,13 @@ import (
 )
 
 func main() {
-    // Send message server
+	// Send message server
 	message, err := unixsock.Send("server.sock", []byte("Hi, data please."))
 	if err != nil {
 		fmt.Println("error:", err)
 		return
-    }
-    // Output : Hello!!
+	}
+	// Output : Hello!!
 	fmt.Println(message)
 }
 ```

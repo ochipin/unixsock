@@ -73,6 +73,7 @@ type Server struct {
 // Close : Server を終了させる
 func (sock *Server) Close() {
 	sock.end = true
+	time.Sleep(2 * time.Millisecond)
 }
 
 // Run : UNIX DOMAIN SOCKET サーバを起動する
@@ -91,24 +92,8 @@ func (sock *Server) Run() error {
 	}
 
 	// すでにサーバが立ち上がっている場合、すみやかに関数を復帰する
-	conn, err := net.Dial("unix", sock.SocketFile)
-	if err == nil {
-		conn.Close()
-		return fmt.Errorf("already in use '%s'", sock.SocketFile)
-	}
-	if err != nil {
-		idx := strings.Index(err.Error(), "connection refused")
-		// 接続ができない状態の場合、すでに使用されていないSocketFileということになる
-		if idx != -1 {
-			// 重要なファイルの可能性もあるため、一旦ファイルを読み込む
-			_, err := ioutil.ReadFile(sock.SocketFile)
-			// ファイルが読み込めてしまった場合は、エラーを返却する
-			if err == nil {
-				return fmt.Errorf("already in use '%s'", sock.SocketFile)
-			}
-			// 読み込めない場合は、すでに使用されていないSocketFileとみなし、削除する
-			os.Remove(sock.SocketFile)
-		}
+	if err := sock.Check(); err != nil {
+		return err
 	}
 
 	// SocketFile に指定されている文字列が、/path/to/url/file.sock の場合、 /path/to/url を作成する
@@ -176,6 +161,31 @@ func (sock *Server) Run() error {
 	}()
 
 	return <-sock.err
+}
+
+// Check : SocketFile が有効か否かを判定する
+func (sock *Server) Check() error {
+	// すでにサーバが立ち上がっている場合、すみやかに関数を復帰する
+	conn, err := net.Dial("unix", sock.SocketFile)
+	if err == nil {
+		conn.Close()
+		return fmt.Errorf("already in use '%s'", sock.SocketFile)
+	}
+	if err != nil {
+		idx := strings.Index(err.Error(), "connection refused")
+		// 接続ができない状態の場合、すでに使用されていないSocketFileということになる
+		if idx != -1 {
+			// 重要なファイルの可能性もあるため、一旦ファイルを読み込む
+			_, err := ioutil.ReadFile(sock.SocketFile)
+			// ファイルが読み込めてしまった場合は、エラーを返却する
+			if err == nil {
+				return fmt.Errorf("already in use '%s'", sock.SocketFile)
+			}
+			// 読み込めない場合は、すでに使用されていないSocketFileとみなし、削除する
+			os.Remove(sock.SocketFile)
+		}
+	}
+	return nil
 }
 
 // SocketFile を監視する
