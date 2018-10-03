@@ -73,7 +73,7 @@ type Server struct {
 // Close : Server を終了させる
 func (sock *Server) Close() {
 	sock.end = true
-	time.Sleep(2 * time.Millisecond)
+	os.Remove(sock.SocketFile)
 }
 
 // Run : UNIX DOMAIN SOCKET サーバを起動する
@@ -190,10 +190,10 @@ func (sock *Server) Check() error {
 
 // SocketFile を監視する
 func (sock *Server) sockFileMonitor() (err error) {
-	tick := time.NewTicker(1 * time.Millisecond)
+	tick := time.NewTicker(1 * time.Second)
 	for {
 		select {
-		// 1ms 毎に SocketFile が存在するか確認する
+		// 1 毎に SocketFile が存在するか確認する
 		case <-tick.C:
 			if sock.end {
 				return nil
